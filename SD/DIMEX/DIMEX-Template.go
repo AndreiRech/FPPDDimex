@@ -140,40 +140,22 @@ func (module *DIMEX_Module) handleUponReqEntry() {
 
 	for i := 0; i < len(module.processes); i++ {
 		if module.id != i {
-			module.sendToLink(module.processes[i], ("reqEntry||" + strconv.Itoa(module.id) + "||" +strconv.Itoa(module.reqTs)), "  ")
+			module.sendToLink(module.processes[i], ("reqEntry," + strconv.Itoa(module.id) + "," +strconv.Itoa(module.reqTs)), "  ")
 		}
 	}
 
 	module.st = wantMX
-
-	/*
-		    quando aplicação aplicação solicita[ dmx, Entry ]  faça
-			    lcl ++
-		   		reqTs := lcl
-		   		nbrResps := 0
-		   		forall processes q != p
-		       		manda msg [ pl , Send | q, [ reqEntry, id, reqTs ]
-		   		st := wantMX
-	*/
 }
 
 func (module *DIMEX_Module) handleUponReqExit() {
 	for i := 0; i < len(module.waiting); i++ {
 		if module.waiting[i] {
-			module.sendToLink(module.processes[i], ("respOk||" + strconv.Itoa(module.id) + "||" +strconv.Itoa(module.reqTs)), "    ")
+			module.sendToLink(module.processes[i], ("respOk," + strconv.Itoa(module.id) + "," +strconv.Itoa(module.reqTs)), "    ")
 			module.waiting[i] = false
 		}
 	}
 
 	module.st = noMX
-
-	/*
-				quando aplicação avisa [ dmx, Exit   ]  faça
-			  		forall  q  em waiting
-		        		manda msg[ pl, Send | q , [ respOk ]  ]
-		   			waiting := {}
-					st := noMX
-	*/
 }
 
 // ------------------------------------------------------------------------------------
@@ -188,50 +170,23 @@ func (module *DIMEX_Module) handleUponDeliverRespOk(msgOutro PP2PLink.PP2PLink_I
 		module.Ind <- dmxResp{}
 		module.st = inMX
 	}
-	/*
-				quando pl entregar msg  [ pl, Deliver | q, [ respOk ] ]
-					nbrResps++
-		   		 	if nbrResps == #processes -1
-		    		then gera evento [ dmx, Deliver | resp ]
-		             	 st := inMX
-	*/
 }
 
 func (module *DIMEX_Module) handleUponDeliverReqEntry(msgOutro PP2PLink.PP2PLink_Ind_Message) {
-	messages := strings.Split(msgOutro.Message, "||")
+	messages := strings.Split(msgOutro.Message, ",")
 	idOutro, _ := strconv.Atoi(messages[1])
+	rtsOutro, _ := strconv.Atoi(messages[2])
+	
+	module.outDbg("reqTs: " + strconv.Itoa(module.reqTs) + " id: " + strconv.Itoa(module.id) + " rts: " + strconv.Itoa(rtsOutro) + " rid: " + strconv.Itoa(idOutro))
 
-	if module.st == noMX || (module.st == wantMX && module.id > int(idOutro)) {
-		module.sendToLink(msgOutro.From, ("respOk||" + strconv.Itoa(module.id) + "||" +strconv.Itoa(module.reqTs)), "    ")
+	if module.st == noMX || (module.st == wantMX && before(module.id, module.reqTs, idOutro, rtsOutro)) {
+		rsAddress := module.processes[rtsOutro]
+		module.sendToLink(rsAddress, "respOk," + strconv.Itoa(module.id) + "," + strconv.Itoa(module.reqTs), "    ")
 	} else {
 		module.waiting[idOutro] = true
-
-		if module.st == inMX || (module.st == wantMX && int(idOutro) > module.id) {
-			module.waiting[idOutro] = true
-		}
 	}
 
-	maior := 0
-	if module.lcl > module.reqTs {
-		maior = module.lcl
-	} else {
-		maior = module.reqTs
-	}
-
-	module.lcl = maior
-
-
-	// outro processo quer entrar na SC
-	/*
-				quando pl entregar msg [ pl, Deliver | q, [ reqEntry, rid, rts ]
-				   if  (st == noMX)   OR
-		         	   (st == wantMX  AND  after([reqTs,id], [rts,rid]) )
-		    	   then  gera evento [ pl, Send | q , [ respOk ]  ]
-		   	 	   else waiting := waiting + [ q ]
-		        		// if   (st == inMX) OR  (st == wantMX AND [rts,rid]> [reqTs,id])
-		        		// then   waiting := waiting + [ q ]     else  // empty
-		     	   lcl := max(lcl, rts)
-	*/
+	module.lcl = max(module.lcl, rtsOutro)
 }
 
 // ------------------------------------------------------------------------------------
@@ -253,6 +208,13 @@ func before(oneId, oneTs, othId, othTs int) bool {
 	} else {
 		return oneId < othId
 	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func (module *DIMEX_Module) outDbg(s string) {

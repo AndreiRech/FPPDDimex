@@ -2,7 +2,7 @@
 
 - [Andrei Rech | 23102140](https://github.com/AndreiRech) 
 - [Erik Suris | 23102289](https://github.com/erikvsuris)
-- [Enzo Zortea | ]()
+- [Enzo Zortea | 23102285](https://github.com/Padeiruuu)
 
 # 📚 INTRODUÇÃO
 

@@ -14,8 +14,10 @@ Resolução de um problema relacionandos a **dimex** para a disciplina de **Fund
 
 # ⚙ INICIALIZAÇÃO
 
-Para rodar cada um dos exercícios, utilize os comandos como o exemplo a seguir:
+Para rodar o exercício, utilize os comandos como o exemplo a seguir em diferentes terminais:
 
 ```
-go run NOMEPROGRAMA.go
+go run useDIMEX-f.go 0 127.0.0.1:5000  127.0.0.1:6001  127.0.0.1:7002
+go run useDIMEX-f.go 1 127.0.0.1:5000  127.0.0.1:6001  127.0.0.1:7002
+go run useDIMEX-f.go 2 127.0.0.1:5000  127.0.0.1:6001  127.0.0.1:7002
 ```

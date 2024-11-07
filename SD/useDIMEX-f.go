@@ -62,7 +62,7 @@ func main() {
 	defer file.Close() // Ensure the file is closed at the end of the function
 
 	// espera para facilitar inicializacao de todos processos (a mao)
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	for {
 		// SOLICITA ACESSO AO DIMEX
